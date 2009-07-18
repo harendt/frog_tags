@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<frog-plugins>
+	<frog-plugin>
+		<id>frog_tags</id>
+		<version>0.0.1</version>
+		<status>unstable</status>
+	</frog-plugin>
+</frog-plugins>

@@ -1,0 +1,48 @@
+/**
+ * Stylesheets for FrogTags Plugin's documentation page.
+ */
+
+.frogtags h2 {
+	background-color: #F5F5F5;
+	border-bottom: solid 1px #DDD;
+	font-size: 1.1em;
+	font-weight: bold;
+	margin: 1em -.4em .5em -.4em;
+	padding: .1em .4em;
+}
+
+.frogtags h3 {
+	color: #666;
+	font-size: 1em;
+	font-weight: normal;
+	margin: .5em 0;
+}
+
+.frogtags p,
+.frogtags dl {
+	margin: .5em 0;
+}
+
+.taglist p,
+.taglist dl {
+	margin-left: 1.5em;
+}
+
+.frogtags dt {
+	clear: left;
+	font-style: italic;
+	float: left;
+	margin-right: 1em;
+}
+
+.frogtags dd {
+	margin: .5em 0 .5em 5em;
+}
+
+.frogtags pre {
+	font-size: 1em;
+	background-color: #FFD;
+	border: solid .5em #EEC;
+	margin: .5em 1.5em;
+	padding: 1em;
+}

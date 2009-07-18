@@ -1,0 +1,88 @@
+h1. FrogTags Plugin Documentation
+
+h2. Brief
+
+Frog tags are very similar to HTML tags. With _FrogTags Plugin_ plugin enabled, you can use some standard Frog tags and first of all easily create own Frog tags.
+
+_FrogTags Plugin_ will add the same functionality to Frog CMS as offered by "Radius tags":http://wiki.github.com/radiant/radiant/radius-tags in Radinat CMS (but with a preceding 'f:' instead of 'r:').
+
+h2. Defining Tags
+
+The following example shows how Frog tags can be defined:
+
+<pre>
+include_once(CORE_ROOT.'/plugins/frog_tags/index.php');
+class MyTags extends FrogTags {
+	public function tag_title() {
+		return $this->page->title();
+	}
+}
+</pre>
+
+As you can guess the tag defined above will output the current page's title.
+
+The _FrogTags Plugin_ will automatically collect all methods whose names start with @tag_@ and whose classes are derived from class @FrogTags@.
+
+The include line is required to assure that the class @FrogTags@ is defined before it is used to derive an other class from it.
+
+h2. Using tags
+
+The above defined tag could be used inside a page as in the following example:
+
+<pre>
+Welcome to page <f:title />
+</pre>
+
+The following is allowed aswell:
+
+<pre>
+Welcome to page <f:title></f:title>
+</pre>
+
+h2. Using arguments
+
+It is possible to pass arguments to a tag in the usual format @argument="value"@. For example:
+
+<pre>
+Welcome to page <f:title uppercase="yes" />
+</pre>
+
+The passed arguments can be accessed inside a tag definition using the array @$args@. For example:
+
+<pre>
+public function tag_title() {
+	if ($this->args['uppercase'] == 'yes')
+		return strtoupper($this->page->title());
+	else
+		return $this->page->title();
+}
+</pre>
+
+To mark an argument as required argument you can call the method @require_argument()@ inside the tag definition. This method will return the required argument's value aswell (or throw an exception if the argument has not been passed).
+
+h2. Tag content and nested tags
+
+Like HTML tags Frog tags can have some content aswell. For example:
+
+<pre>
+<f:uppercase>Welcome to page <title /></f:uppercase>
+</pre>
+
+The content can be accessed inside a tag definition using the member variable @$content@. To parse the content and get the parsed result use the method @expand()@. For example:
+
+<pre>
+public function tag_uppercase() {
+	return strtoupper($this->expand());
+}
+</pre>
+
+It is also possible to pass some default arguments to the child tags. For example:
+
+<pre>
+public function tag_uppercase() {
+	$defaultArgs = array('uppercase' => 'yes');
+	return $this->expand($defaultArgs);
+}
+</pre>
+
+To access the parent tag inside a tag definition use the member variable @$parent@. As @$parent@ is a reference any changes made to @$parent@ will affect the parent tag aswell.
