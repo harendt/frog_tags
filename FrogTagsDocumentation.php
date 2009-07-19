@@ -22,23 +22,31 @@
  */
 
 class FrogTagBrief {
-	protected $name, $brief, $arguments, $usage;
+
+	public $name, $brief, $arguments, $usage;
 
 	/**
 	 * Puts out a HTML-formatted tag brief.
 	 */
 	public function to_html() {
-		$html = '<h2>' . $this->name . '</h2>';
+		$html = '<h2 id="tag_' . $this->name . '">' . $this->name . '</h2>';
 		if ($this->brief != '') {
 			$html .= '<h3>Brief:</h3>';
-			$html .= '<p>' . str_replace("\n", '</p><p>', $this->brief) . '</p>';
+			$brief = $this->filter($this->brief);
+			$html .= '<p>' . str_replace("\n", '</p><p>', $brief) . '</p>';
 		}
 		if (count($this->arguments) > 0) {
 			$html .= '<h3>Arguments:</h3>';
 			$html .= '<dl>';
-			foreach($this->arguments as $argument => $description)
+			foreach($this->arguments as $argument => $description) {
+				$description = $this->filter($description);
 				$html .= "<dt>$argument</dt><dd>$description</dd>";
+			}
 			$html .= '</dl>';
+		}
+		if ($this->see != '') {
+			$html .= '<h3>See also:</h3>';
+			$html .= '<p>' . $this->filter($this->see) . '</p>';
 		}
 		if ($this->usage != '') {
 			$html .= '<h3>Usage:</h3>';
@@ -56,17 +64,22 @@ class FrogTagBrief {
 		// name
 		$this->name = $name;
 
-		// trim lines
+		// preprocessing
 		$brief = $this->trim_lines($brief);
+		foreach(array('arg', 'usage', 'see') as $keyword) {
+			$brief = str_replace("@$keyword", "\n\n@$keyword", $brief);
+		}
 
 		// arguments (match the pattern @arg <name> <description>)
 		$this->arguments = array();
-		$brief = preg_replace('/@arg/', "\n\n@arg", $brief);
-		$brief = preg_replace_callback("/@arg\s+(\w+)\s+(.*?)(\n\n|$)/s", array($this, 'replace_argument_pattern'), $brief);
+		$brief = preg_replace_callback("/@arg\s+(\w+)\s+(.*?)(\n\n|$)/s", array($this, 'replace_arg_pattern'), $brief);
 
-		// usage (match the pattern @usage <usage> @endusage)
+		// see also (match the pattern @see ...)
+		$this->see = '';
+		$brief = preg_replace_callback("/@see\s+(.*?)(\n\n|$)/s", array($this, 'replace_see_pattern'), $brief);
+
+		// usage (match the pattern @usage ... @endusage)
 		$this->usage = '';
-		$brief = preg_replace('/@usage/', "\n\n@usage", $brief);
 		$brief = preg_replace_callback("/@usage(.*?)@endusage/s", array($this, 'replace_usage_pattern'), $brief);
 		$this->usage = $this->trim_usage();
 
@@ -75,11 +88,19 @@ class FrogTagBrief {
 		$this->brief = $this->trim_brief();
 	}
 
-	private function replace_argument_pattern($match) {
+	private function replace_arg_pattern($match) {
 		$argument = $match[1];
 		$description = trim($match[2]);
 		$description = preg_replace('/\s+/', ' ', $description);
 		$this->arguments[$argument] = $description;
+		return '';
+	}
+
+	private function replace_see_pattern($match) {
+		$see = trim($match[1]);
+		$see = preg_replace('/\s+/', ' ', $see);
+		if ($see != '')
+			$this->see .= ($this->see!=''?' ':'') . $see;
 		return '';
 	}
 
@@ -120,6 +141,29 @@ class FrogTagBrief {
 		$brief = preg_replace("/\n+/", "\n", $brief);
 		return $brief;
 	}
+
+	private function filter($string) {
+		// treat *...* as bold text
+		$string = preg_replace('/\*(.*?)\*/', '<b>$1</b>', $string);
+		// treat _..._ as italic text
+		$string = preg_replace('/_(.*?)_/', '<i>$1</i>', $string);
+		// treat @...@ as code
+		$string = preg_replace_callback(
+			'/@(.*?)@/',
+			create_function(
+				'$matches',
+				'return "<code>" . htmlspecialchars($matches[1]) . "</code>";'
+			),
+			$string
+		);
+		// treat f:... as frog tag and replace it with a link
+		$string = preg_replace('/f:(\w+)/', '<a href="'.$_SERVER['REQUEST_URI'].'#tag_$1">$1</a>', $string);
+		return $string;
+	}
+
+	public static function compare($a, $b) {
+		return strcmp($a->name, $b->name);
+	}
 }
 
 class FrogTagsDocumentation {
@@ -129,14 +173,17 @@ class FrogTagsDocumentation {
 		$this->briefs = array();
 		foreach (get_included_files() as $filename)
 			$this->parse_source(file_get_contents($filename));
+		usort($this->briefs, 'FrogTagBrief::compare');
 	}
 
 	/**
 	 * Puts out a list of all tag briefs formatted using HTML.
 	 */
 	public function html() {
+		$html = '';
 		foreach($this->briefs as $brief)
-			echo $brief->to_html();
+			$html .= $brief->to_html();
+		echo $html;
 	}
 
 	/**
@@ -153,7 +200,7 @@ class FrogTagsDocumentation {
 		$definedTags = FrogTagsList::get();
 		$this->briefnum = 0;
 		$string = preg_replace_callback("|/\*(.*)\*/|Us", array($this, 'comment_to_tag'), $string); // preprocessing
-		preg_match_all("|<(brief-\d+)>(.*)</\\1>\s+(public\s)?\s*function\s+tag_(\w+)\s*\(\s*\)\s*|Us", $string, $matches, PREG_SET_ORDER);
+		preg_match_all("|<(brief-\d+)>(.*)</\\1>\s+(public\s)?\s*function\s+tag_(\w+)\s*\(.*\)\s*|Us", $string, $matches, PREG_SET_ORDER);
 		foreach($matches as $match) {
 			$name = $match[4];
 			$brief = $match[2];

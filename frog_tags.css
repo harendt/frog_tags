@@ -46,3 +46,11 @@
 	margin: .5em 1.5em;
 	padding: 1em;
 }
+
+.taglist a {
+	text-decoration:none;
+}
+
+.taglist a:hover {
+	text-decoration:underline;
+}
