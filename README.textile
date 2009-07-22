@@ -6,6 +6,16 @@ Frog tags are very similar to HTML tags. With _FrogTags Plugin_ plugin enabled, 
 
 _FrogTags Plugin_ will add the same functionality to Frog CMS as offered by "Radius tags":http://wiki.github.com/radiant/radiant/radius-tags in Radinat CMS (but with a preceding 'f:' instead of 'r:').
 
+h2. Configuration
+
+To allow execution of PHP code as common in Frog CMS add the line
+
+<pre>
+define(ALLOW_PHP, true);
+</pre>
+
+to @FROG_ROOT/config.php@. (As this file is normally not writable you have to give yourself write permission to that file first!)
+
 h2. Defining Tags
 
 The following example shows how Frog tags can be defined:

@@ -33,7 +33,8 @@ class StandardTags extends FrogTags {
 
 	/*
 		Puts out the breadcrumbs for the current page.
-		@arg separator Character or string that separates breadcrumbs. Default is @&gt;@.
+		@arg separator Character or string that separates breadcrumbs. Default
+		is @&gt;@.
 		@usage <f:breadcrumbs [separator="separator_string"] /> @endusage
 	*/
 	public function tag_breadcrumbs() {
@@ -43,10 +44,16 @@ class StandardTags extends FrogTags {
 
 	/*
 		Renders the containing elements if all of the listed page parts exist.
-		@arg part     A list separated by spaces of page parts. Default is @body@.
-		@arg inherit  If true, the tag will search ancestors for each part aswell. Default is @false@.
-		@arg find     When listing more than one part, you may set this argument to @any@ so that this tag will render the containing elements if any (not all as by default) of the listed parts exists.
+
+		@arg part A list separated by spaces of page parts. Default is @body@.
+		@arg inherit If true, the tag will search ancestors for each part
+		aswell. Default is @false@.
+		@arg find When listing more than one part, you may set this argument to
+		@any@ so that this tag will render the containing elements if any (not
+		all as by default) of the listed parts exists.
+
 		@see f:unless_content
+
 		@usage
 			> <f:if_content [part="part_name other_part"] [inherit="true|false"]>
 			>   ...
@@ -87,15 +94,20 @@ class StandardTags extends FrogTags {
 
 	/*
 		Renders the content of the current page.
-		@arg part     Specifies which page part should be rendered. Default is @body@.
-		@arg inherit  Specifies that if a page does not have the specified page part the tag should render the parent's page part. Default is @false@.
+		@arg part Specifies which page part should be rendered. Default is
+		@body@.
+		@arg inherit Specifies that if a page does not have the specified page
+		part the tag should render the parent's page part. Default is @false@.
 		@usage <f:content [part="page_part"] [inherit="true|false"] /> @endusage
 	*/
 	public function tag_content() {
 		$part    = $this->get_argument('part', 'body');
 		$inherit = $this->get_argument('inherit') == 'true' ? true : false;
-		$content = $this->page->content($part, $inherit);
-		return $this->parse($content);
+
+		// get stdClass object width members 'content' and 'filter_id'
+		$content = FrogTagsHacks::get_page_content($this->page, $part, $inherit);
+
+		return $this->parse($content->content, $this, $content->filter_id);
 	}
 
 	/*
@@ -105,11 +117,37 @@ class StandardTags extends FrogTags {
 	*/
 	public function tag_snippet() {
 		$name = $this->require_argument('name');
-		ob_start();
-		$this->page->includeSnippet($name);
-		$snippet = ob_get_contents();
-		ob_end_clean();
-		return $this->parse($snippet);
+
+		// get a stdClass object with members 'content' and 'filer_id'
+		$snippet = FrogTagsHacks::get_snippet($name, $this->page);
+
+		return $this->parse($snippet->content, $this, $snippet->filter_id);
+	}
+
+	/*
+		Renders the content of the specified file.
+
+		@arg file Specifies the file that should be included. The path must be
+		given relative to the public directory. Only files in the public
+		directory are allowed.
+		@usage <f:include file="filename" /> @endusage
+	*/
+	public function tag_include() {
+		$filename = $this->require_argument('file');
+		$public   = realpath(FROG_ROOT.'/public/');
+		$filename = realpath($public.'/'.$filename);
+		if (substr_compare($public, $filename, 0, strlen($public)) != 0)
+			throw new Exception('Only files in the public directory are allowed to be included!');
+		$content = file_get_contents($filename);
+		$content = FrogTagsHacks::execute($content, $this->page);
+/*		if (ALLOW_PHP) {
+			ob_start();
+			eval('?>'.$content);
+			$string = ob_get_contents();
+			ob_end_clean();
+		}*/
+		$content = $this->parse($content, $this);
+		return $content;
 	}
 
 	/*
@@ -126,6 +164,17 @@ class StandardTags extends FrogTags {
 	*/
 	public function tag_base_url() {
 		return BASE_URL;
+	}
+
+	// work in progress ...
+	public function tag_each_child() {
+		$result = '';
+		$args = array('limit' => 10, 'order' => 'page.created_on DESC');
+		foreach ($this->page->children($args) as $child) {
+			$this->page = $child;
+			$result .= $this->expand();
+		}
+		return $result;
 	}
 
 }

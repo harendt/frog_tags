@@ -27,7 +27,7 @@ include_once('FrogTags.php');
 
 class FrogTagsParser {
 
-	private $page, $tags;
+	protected $page, $tags;
 
 	/**
 	 * Creates a new FrogTagParser object for $page.

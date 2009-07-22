@@ -49,7 +49,7 @@ class FrogTags {
 
 	/**
 	 * This method can be used inside of tag definitions to mark $arg as
-	 * required. If $arg is missing an exception will be thrown. Else the
+	 * required. If $arg is missing an exception will be thrown. Otherwise the
 	 * passed value will be returned.
 	 */
 	protected function require_argument($arg) {
@@ -71,12 +71,33 @@ class FrogTags {
 	}
 
 	/**
-	 * This method can be used to simply run a tag parser inside of a tag
-	 * definition.
+	 * This method can be used inside of tag definitions to require a
+	 * particular parent tag. If the required parent tag is missing an
+	 * exception will be thrown. Otherwise the required parent tag will be
+	 * returned.
 	 */
-	protected function parse($string, &$parent = NULL, $defaultArgs = array()) {
-		$parser = new FrogTagsParser($this->page);
-		return $parser->parse($string, $parent, $defaultArgs);
+	protected function require_parent($parentTag) {
+		if ($this->parent == NULL)
+			throw new Exception("This tag requires a parent tag \"$parentTag\"!");
+		if ($this->parent->name != $parentTag)
+			$this->parent->require_parent($parentTag, $childTag);
+	}
+
+	/**
+	 * This method can be used to simply run a tag parser inside of a tag
+	 * definition. If a filter id is given the specified filter will be applied
+	 * aswell.
+	 */
+	protected function parse($string, &$parent = NULL, $filter_id = '', $defaultArgs = array()) {
+		if (!empty($string)) {
+			$parser = new FrogTagsParser($this->page);
+			$string = $parser->parse($string, $parent, $defaultArgs);
+		}
+		if (!empty($filter_id)) {
+			$filter = Filter::get($filter_id);
+			$string = $filter->apply($string);
+		}
+		return $string;
 	}
 
 	/**
@@ -84,7 +105,7 @@ class FrogTags {
 	 * content. This makes sense only for non-empty tags.
 	 */
 	protected function expand($defaultArgs = array()) {
-		return $this->parse($this->content, $this, $defaultArgs);
+		return $this->parse($this->content, $this, '', $defaultArgs);
 	}
 
 }

@@ -37,24 +37,17 @@ if (!defined('FrogTagsPluginIncluded')) {
 
 	Plugin::addController('frog_tags', 'Frog Tags', '', false);
 
+	// default setting (could be changed in FROG_ROOT/config.php)
+	if (!defined('ALLOW_PHP')) define('ALLOW_PHP', false);
+
 	include_once('FrogTagsParser.php');
 	include_once('StandardTags.php');
+	include_once('FrogTagsHacks.php');
 
-	Observer::observe('page_found', 'parse_frog_tags');
-
-	function parse_frog_tags($page) {
-		// get content
-		$page->_executeLayout();
-		$content = ob_get_contents();
-		ob_clean();
-
-		// parse frog tags
+	function frog_tags_main($page) {
+		$content = FrogTagsHacks::get_page_layout($page);
 		$parser = new FrogTagsParser($page);
 		$content = $parser->parse($content);
-
-		// prevent a second execution of $page->_exectuteLayout()
-		$page->layout_id = -1;
-
 		echo $content;
 	}
 
