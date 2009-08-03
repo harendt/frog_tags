@@ -79,8 +79,10 @@ class FrogTags {
 	protected function require_parent($parentTag) {
 		if ($this->parent == NULL)
 			throw new Exception("This tag requires a parent tag \"$parentTag\"!");
-		if ($this->parent->name != $parentTag)
+		elseif ($this->parent->name != $parentTag)
 			$this->parent->require_parent($parentTag, $childTag);
+		else 
+			return $this->parent;
 	}
 
 	/**
