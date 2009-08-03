@@ -21,6 +21,8 @@
  * FrogTags Plugin was designed for Frog CMS at version 0.9.5.
  */
 
+include_once(dirname(__FILE__).'/../FrogTagsController.php');
+
 class FrogTagsParserPreprocessor {
 
 	/**
@@ -90,7 +92,6 @@ class FrogTagsParserPreprocessor {
 	 */
 	private function close_tag(&$name) {
 		if (!in_array($name, $this->parentTags)) {
-			print_r($this->parentTags);
 			throw new Exception("End tag for element 'f:$name' which is not open!");
 		}
 		if (end($this->parentTags) != $name)

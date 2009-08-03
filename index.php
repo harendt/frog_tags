@@ -40,9 +40,9 @@ if (!defined('FrogTagsPluginIncluded')) {
 	// default setting (could be changed in FROG_ROOT/config.php)
 	if (!defined('ALLOW_PHP')) define('ALLOW_PHP', false);
 
-	include_once('FrogTagsParser.php');
-	include_once('StandardTags.php');
-	include_once('FrogTagsHacks.php');
+	include_once('app/FrogTagsParser.php');
+	include_once('app/StandardTags.php');
+	include_once('app/FrogTagsHacks.php');
 
 	function frog_tags_main($page) {
 		$content = FrogTagsHacks::get_page_layout($page);

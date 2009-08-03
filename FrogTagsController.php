@@ -25,7 +25,7 @@ if (!defined('FrogTagsControllerIncluded')) {
 
 	define('FrogTagsControllerIncluded', true);
 
-	include_once('FrogTagsDocumentation.php');
+	include_once('app/FrogTagsDocumentation.php');
 
 	class FrogTagsController extends PluginController {
 

@@ -21,7 +21,7 @@
  * FrogTags Plugin was designed for Frog CMS at version 0.9.5.
  */
 
-include_once('FrogTagsController.php');
+include_once(dirname(__FILE__).'/../FrogTagsController.php');
 
 /**
  * Returns an array of all classes derived from $parentClass

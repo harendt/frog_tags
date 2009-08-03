@@ -21,9 +21,9 @@
  * FrogTags Plugin was designed for Frog CMS at version 0.9.5.
  */
 
+include_once('FrogTags.php');
 include_once('FrogTagsList.php');
 include_once('FrogTagsParserPreprocessor.php');
-include_once('FrogTags.php');
 
 class FrogTagsParser {
 
