@@ -32,6 +32,46 @@ class StandardTags extends FrogTags {
 	}
 
 	/*
+		Renders a link to the current page or to the page specified in the
+		argument @url@. HTML attributes like @class="..."@ will be included in
+		the rendered link.
+
+		@arg url Specifies the page to which a link should be rendered. If
+		empty the current page will be used.
+
+		@usage
+			<f:link [url="..."] [HTML attributes] />
+			<f:link [url="..."] [HTML attributes]>Link-Text</f:link>
+		@endusage
+	*/
+	public function tag_link() {
+		// change page if url is specified
+		$url = $this->get_argument('url');
+		if (!empty($url)) {
+			$found = $this->page->find($url);
+			if ($found)
+				$this->page = $found;
+		}
+		unset($this->args['url']);
+
+		// include HTML attributes
+		$options = '';
+		foreach($this->args as $arg => $value) {
+			$options .= " $arg=\"$value\"";
+		}
+		$options = trim($options);
+
+		// render content if any
+		if (empty($this->content))
+			$label = NULL;
+		else
+			$label = $this->expand();
+
+		// render link
+		return $this->page->link($label, $options);
+	}
+
+	/*
 		Puts out the breadcrumbs for the current page.
 		@arg separator Character or string that separates breadcrumbs. Default
 		is @&gt;@.
@@ -81,8 +121,6 @@ class StandardTags extends FrogTags {
 			$render = !$render;
 		if ($render)
 			return $this->expand();
-		else
-			return '';
 	}
 
 	/*
@@ -112,7 +150,7 @@ class StandardTags extends FrogTags {
 
 	/*
 		Renders the specified snippet.
-		@arg snippet The name of the snippet that should be rendered.
+		@arg name The name of the snippet that should be rendered.
 		@usage <f:snippet name="snippet_name" /> @endusage
 	*/
 	public function tag_snippet() {
@@ -166,15 +204,133 @@ class StandardTags extends FrogTags {
 		return BASE_URL;
 	}
 
-	// work in progress ...
-	public function tag_each_child() {
+	/*
+		Inside this tag all page related tags refer to the page found by the @url@ argument.
+
+		@usage <f:find url="...">...</f:find> @endusage
+	*/
+	public function tag_find() {
+		$url = $this->require_argument('url');
+		$found = $this->page->find($url);
+		if ($found) {
+			$this->page = $found;
+			return $this->expand();
+		}
+	}
+
+	/*
+		Renders the containing elements if the current page's url matches the
+		specified pattern.
+		@arg match A regular expression that is tested to match the current
+		url. Leading and trailing delimiters can be omitted.
+		@arg flags Pattern modifiers. See <a href="http://www.php.net/manual/reference.pcre.pattern.modifiers.php">php.net</a>
+		for further details about pattern modifiers.
+		@usage <f:if_url match="pattern" [flags="..."]>...</f:if_url> @endusage
+		@see f:unless_url
+	*/
+	public function tag_if_url($invert = false) {
+		$pattern = $this->require_argument('match');
+		$flags = $this->get_argument('flags');
+		$url = '/' . $this->page->url;
+		$render = 1 == preg_match("|$pattern|$flags", $url);
+		if ($invert)
+			$render = !$render;
+		if ($render)
+			return $this->expand();
+	}
+
+	/*
+		The opposite of the @f:if_url@ tag.
+	*/
+	public function tag_unless_url() {
+		return $this->tag_if_url(true);
+	}
+
+	/*
+		Tag to iterate over a collection tag, e.g. @f:children@.
+		@arg collection Specifies the collection tag name (optional).
+		@usage <f:children><f:each [collection="children"]>...</f:each></f:children> @endusage
+		@see f:children
+	*/
+	public function tag_each() {
+		$parent = $this->get_argument('collection', NULL);
+		$collection = $this->require_class_attribute('collection', $parent);
 		$result = '';
-		$args = array('limit' => 10, 'order' => 'page.created_on DESC');
-		foreach ($this->page->children($args) as $child) {
-			$this->page = $child;
+		foreach($collection as $item) {
+			$attributes = array('content', 'page'); // default attributes
+			if(isset($parent->collection_attributes)) {
+				$attributes = array_merge($attributes, $parent->collection_attributes);
+			}
+			foreach($attributes as $attribute) {
+				if (isset($item->$attribute)) {
+					$this->$attribute = $item->$attribute;
+					unset($item->$attribute);
+				}
+			}
 			$result .= $this->expand();
 		}
 		return $result;
+	}
+
+	/*
+		Collects all children for the current page.
+
+		@arg order If @oder@ is @desc@ the children will be ordered descending.
+		Otherwise they will be ordered ascending.
+		@arg by Specifies how the children should be ordered. Default is
+		@position@.
+		@arg offset Works only if @limit@ is specified aswell.
+		@arg limit Limits the number of children.
+		@arg status If @status@ is @all@ also hidden pages will be included.
+
+		@usage
+		> <f:children
+		>   [order="asc|desc"]
+		>   [by="position|created|published|updated"]
+		>   [offset="..."]
+		>   [limit="..."]
+		>   [status="all"]>
+		>   ...
+		> </f:children>
+		@endusage
+
+		@see f:each
+	*/
+	public function tag_children() {
+		$order = $this->get_argument('order');
+		if(!in_array($order, array('desc', 'asc')))
+			$order = 'asc';
+		$order = strtoupper($order);
+
+		$orderBy = $this->get_argument('by');
+		if(!in_array($orderBy, array('position', 'created', 'published', 'updated')))
+			$orderBy = 'position';
+		if(in_array($orderBy, array('created', 'published', 'updated')))
+			$orderBy .= '_on';
+
+		$offset = $this->get_argument('offset', 0);
+		$offset = intval($offset);
+
+		$limit = $this->get_argument('limit', 0);
+		$limit = intval($limit);
+
+		$status = $this->get_argument('status');
+		if ($status == 'all')
+			$include_hidden = true;
+		else
+			$include_hidden = false;
+
+		$args = array('order' => "page.$orderBy $order", 'offset' => $offset, 'limit' => $limit);
+		$children = $this->page->children($args, array(), $include_hidden);
+		if ($limit == 1 && !empty($children))
+			$children = array($children);
+		$this->collection = array();
+		if (is_array($children)) {
+			foreach($children as $child) {
+				array_push($this->collection, (object) array('page' => $child));
+			}
+		}
+		return $this->expand();
 	}
 
 }

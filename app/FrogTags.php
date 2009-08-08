@@ -23,7 +23,7 @@
 
 class FrogTags {
 
-	protected $name, $method, $page, $args, $content, $parent;
+	protected $name, $method, $page, $content, $args, $parent;
 
 	/**
 	 * Creates a new FrogTags object for $method. $method is the function that
@@ -38,11 +38,12 @@ class FrogTags {
 	 * Generates the content for this tag using the Page object $page and the
 	 * array of arguments $args.
 	 */
-	public function process($page, $args, $content, &$parent) {
+	public function process($page, $content, $args, &$parent) {
 		$this->page    = $page;
-		$this->args    = $args;
 		$this->content = $content;
+		$this->args    = $args;
 		$this->parent  = &$parent;
+
 		$method = $this->method;
 		return $this->$method();
 	}
@@ -79,10 +80,34 @@ class FrogTags {
 	protected function require_parent($parentTag) {
 		if ($this->parent == NULL)
 			throw new Exception("This tag requires a parent tag \"$parentTag\"!");
-		elseif ($this->parent->name != $parentTag)
-			$this->parent->require_parent($parentTag, $childTag);
-		else 
+		elseif ($this->parent->name == $parentTag)
 			return $this->parent;
+		else 
+			$this->parent->require_parent($parentTag);
+	}
+
+	/**
+	 * This method can be used inside of tag definitions to require that the
+	 * class attribute $member has been defined in any parent tag.
+	 *
+	 * If the parameter $parentTag is given the required class attribute must
+	 * belong to that particular tag.
+	 *
+	 * If the required attribute is missing an exception will be thrown.
+	 * Otherwise the required attribute will be returned and $parentTag will
+	 * refer to the parent tag with the required attribute.
+	 */
+	protected function require_class_attribute($member, &$parentTag = NULL) {
+		if ($this->parent == NULL) {
+			throw new Exception("This tag requires a class attribute \"$member\" in parent tag!");
+		}
+		elseif (($parentTag == NULL or $this->parent->name == $parentTag) and property_exists($this->parent, $member) and isset($this->parent->$member)) {
+			$parentTag = $this->parent;
+			return $this->parent->$member;
+		}
+		else  {
+			$this->parent->require_class_attribute($member, $parentTag);
+		}
 	}
 
 	/**

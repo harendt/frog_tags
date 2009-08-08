@@ -82,7 +82,7 @@ class FrogTagsParser {
 					$class  = $this->tags[$name]['class'];
 					$method = $this->tags[$name]['method'];
 					$tag = new $class($name, $method);
-					$tag = $tag->process(clone $this->page, $args, $content, $parent);
+					$tag = $tag->process(clone $this->page, $content, $args, $parent);
 				}
 				else {
 					throw new Exception("Tag \"&lt;f:$name /&gt;\" wasn't defined!");
