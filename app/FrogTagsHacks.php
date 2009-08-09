@@ -23,6 +23,9 @@
 
 Observer::observe('page_found', 'FrogTagsHacks::infiltrate');
 
+Observer::clearObservers('page_not_found');
+Observer::observe('page_not_found', 'FrogTagsHacks::page_not_found_hack');
+
 class FrogTagsHacks {
 
 	/**
@@ -137,6 +140,31 @@ class FrogTagsHacks {
 			$content = $copy->content();
 		}
 		return $content;
+	}
+
+	/**
+	 * Hack for the page not found plugin.
+	 */
+	public static function page_not_found_hack() {
+		if (function_exists('behavior_page_not_found')) {
+			global $__FROG_CONN__;
+
+			$query = 'SELECT slug FROM '.TABLE_PREFIX."page WHERE behavior_id='page_not_found'";
+			$statement = $__FROG_CONN__->prepare($query);
+			$statement->execute();
+
+			if ($page = $statement->fetchObject()) {
+				$page = find_page_by_uri($page->slug);
+				
+				if (is_object($page)) {
+					header("HTTP/1.0 404 Not Found");
+					header("Status: 404 Not Found");
+
+					frog_tags_main($page);
+					exit();
+				}
+			}
+		}
 	}
 
 }
