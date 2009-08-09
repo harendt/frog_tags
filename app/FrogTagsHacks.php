@@ -33,11 +33,22 @@ class FrogTagsHacks {
 	 * frog tags parser on the content of $page.
 	 */
 	public static function infiltrate($page) {
+		// call other observer methods first
+		$observerList = Observer::getObserverList('page_found');
+		$alreadyCalled = true;
+		foreach($observerList as $callback) {
+			if ($callback == 'FrogTagsHacks::infiltrate')
+				$alreadyCalled = false;
+			elseif (!$alreadyCalled) {
+				call_user_func($callback, $page);
+			}
+		}
+
 		// parse frog tags
 		frog_tags_main($page);
 
-		// after all prevent execution of $page->_executeLayout()
-		$page->layout_id = -1;
+		// after all prevent execution of $page->_executeLayout() (the old way was: $page->layout_id = -1)
+		exit(0);
 	}
 
 	/**
@@ -146,7 +157,7 @@ class FrogTagsHacks {
 	 * Hack for the page not found plugin.
 	 */
 	public static function page_not_found_hack() {
-		# Call other observer methods first
+		# call other observer methods first
 		$observerList = Observer::getObserverList('page_not_found');
 		unset($observerList['behavior_page_not_found']);
 		$alreadyCalled = true;
