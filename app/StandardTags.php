@@ -74,12 +74,20 @@ class StandardTags extends FrogTags {
 	/*
 		Puts out the breadcrumbs for the current page.
 		@arg separator Character or string that separates breadcrumbs. Default
-		is @&gt;@.
+		is "@ &gt; @".
 		@usage <f:breadcrumbs [separator="separator_string"] /> @endusage
 	*/
 	public function tag_breadcrumbs() {
-		$separator = $this->get_argument('separator', '&gt;');
-		return $this->page->breadcrumbs($separator);
+		$separator = $this->get_argument('separator', ' &gt; ');
+		$breadcrumbs = '';
+		$page = $this->page;
+		while ($page = $page->parent) {
+			if ($page->breadcrumb() != '') {
+				$breadcrumbs = $page->link($page->breadcrumb(), 'class="breadcrumb"') . '<span class="breadcrumb-separator">' . $separator . '</span>' . $breadcrumbs;
+			}
+		}
+		$breadcrumbs .= '<span class="breadcrumb">' . $this->page->breadcrumb() . '</span>';
+		return $breadcrumbs;
 	}
 
 	/*
