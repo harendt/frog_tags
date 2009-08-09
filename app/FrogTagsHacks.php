@@ -23,7 +23,7 @@
 
 Observer::observe('page_found', 'FrogTagsHacks::infiltrate');
 
-Observer::clearObservers('page_not_found');
+Observer::stopObserving('page_not_found', 'behavior_page_not_found');
 Observer::observe('page_not_found', 'FrogTagsHacks::page_not_found_hack');
 
 class FrogTagsHacks {
@@ -146,6 +146,17 @@ class FrogTagsHacks {
 	 * Hack for the page not found plugin.
 	 */
 	public static function page_not_found_hack() {
+		# Call other observer methods first
+		$observerList = Observer::getObserverList('page_not_found');
+		unset($observerList['behavior_page_not_found']);
+		$alreadyCalled = true;
+		foreach($observerList as $callback) {
+			if ($callback == 'FrogTagsHacks::page_not_found_hack')
+				$alreadyCalled = false;
+			elseif (!$alreadyCalled)
+				call_user_func($callback);
+		}
+
 		if (function_exists('behavior_page_not_found')) {
 			global $__FROG_CONN__;
 
