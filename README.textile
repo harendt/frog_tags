@@ -96,3 +96,11 @@ public function tag_uppercase() {
 </pre>
 
 To access the parent tag inside a tag definition use the member variable @$parent@. As @$parent@ is a reference any changes made to @$parent@ will affect the parent tag aswell.
+
+As shortcut nested tags can be written for example as:
+
+<pre><f:children:each status="all">...</f:children:each></pre>
+
+This is equivalent to:
+
+<pre><f:children status="all"><f:each status="all">...</f:each></f:children></pre>

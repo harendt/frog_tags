@@ -44,6 +44,9 @@ class FrogTagsParserPreprocessor {
 			// replace empty tags
 			$string = preg_replace("|<f:(\w+?)([^<>]*)/>|U", "<f:\\1\\2></f:\\1>", $string);
 
+			// replace nested tags (e. g. <f:children:each> with <f:children><f:each>)
+			$string = preg_replace_callback("|<(/?)f:([:\w]+?)([^<>]*)>|U", array($this, 'replace_nested_tag'), $string);
+
 			// mark top-level tags
 			$this->parentTags = array();
 			$string = preg_replace_callback("|<(/?)f:(\w+?)([^<>]*)>|U", array($this, 'process_tag'), $string);
@@ -53,6 +56,34 @@ class FrogTagsParserPreprocessor {
 			$controller->error_page('Fatal Parsing Error', $e->getMessage());
 		}
 		return $string;
+	}
+
+	/**
+	 * Replaces nested tags.
+	 *
+	 * For example <f:children:each status="all"> will be replaced with
+	 * <f:children status="all"><f:each status="all">. Closing tags as
+	 * </f:children:each> will be replaced with </f:each></f:children>.
+	*/
+	public function replace_nested_tag($matches) {
+		if (substr_count($matches[2], ':') <= 0) {
+			return $matches[0];
+		}
+		else {
+			$tags = explode(':', $matches[2]);
+			if($matches[1] == '/') {
+				$tags = array_reverse($tags);
+			}
+			$result = '';
+			foreach($tags as $name) {
+				if(!empty($name)) {
+					$prefix    = $matches[1];
+					$arguments = $matches[3];
+					$result .= '<' . $prefix . 'f:' . $name . $arguments . '>';
+				}
+			}
+			return $result;
+		}
 	}
 
 	/**
