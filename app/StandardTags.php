@@ -32,6 +32,14 @@ class StandardTags extends FrogTags {
 	}
 
 	/*
+		Puts out the breadcrumb of the current page
+		@usage <f:breadcrumb /> @endusage
+	*/
+	public function tag_breadcrumb() {
+		return $this->page->breadcrumb();
+	}
+
+	/*
 		Renders a link to the current page or to the page specified in the
 		argument @url@. HTML attributes like @class="..."@ will be included in
 		the rendered link.
@@ -240,7 +248,7 @@ class StandardTags extends FrogTags {
 		$pattern = $this->require_argument('match');
 		$flags = $this->get_argument('flags');
 		$url = '/' . $this->page->url;
-		$render = 1 == preg_match("|$pattern|$flags", $url);
+		$render = 1 == preg_match("@$pattern@$flags", $url);
 		if ($invert)
 			$render = !$render;
 		if ($render)
