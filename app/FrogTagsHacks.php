@@ -33,6 +33,8 @@ class FrogTagsHacks {
 	 * frog tags parser on the content of $page.
 	 */
 	public static function infiltrate($page) {
+		// define constant 'page_found' (see page_not_found_hack to know why ...)
+		define('page_found', true);
 		// call other observer methods first
 		$observerList = Observer::getObserverList('page_found');
 		$alreadyCalled = true;
@@ -157,7 +159,13 @@ class FrogTagsHacks {
 	 * Hack for the page not found plugin.
 	 */
 	public static function page_not_found_hack() {
-		# call other observer methods first
+
+		// only throw exception if main page has been found
+		if(defined('page_found') && page_found ==  true) {
+			throw new Exception('Page not found!');
+		}
+
+		// call other observer methods first
 		$observerList = Observer::getObserverList('page_not_found');
 		unset($observerList['behavior_page_not_found']);
 		$alreadyCalled = true;
