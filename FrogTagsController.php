@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright 2009 Bastian Harendt <b.harendt@gmail.com>
+ * Copyright 2009-2010 Bastian Harendt <b.harendt@gmail.com>
  *
  * This file is part of FrogTags Plugin.
  *
